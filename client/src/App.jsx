@@ -680,6 +680,7 @@ function App() {
     const toggleChat = () => {
       chatOpen = !chatOpen;
       chatWindow.classList.toggle("open", chatOpen);
+      chatButton.classList.toggle("open", chatOpen);
       chatButton.innerHTML = chatOpen ? "✕" : '<div class="pulse-ring"></div>🤖';
       if (chatOpen) chatInput.focus();
     };
