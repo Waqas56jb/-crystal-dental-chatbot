@@ -28,6 +28,7 @@ export default function App() {
   const [form, setForm] = useState({ question: "", category: "general", answer_en: "", answer_hu: "", answer_fr: "" });
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
+  const [isSettingsEditing, setIsSettingsEditing] = useState(false);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -78,6 +79,14 @@ export default function App() {
       return catOk && (!q || txt.includes(q));
     });
   }, [knowledge, kbCategory, kbSearch]);
+
+  const settingsPreview = useMemo(() => {
+    const next = { ...(settings || {}) };
+    if (next.openai_api_key) {
+      next.openai_api_key = "******** (hidden)";
+    }
+    return next;
+  }, [settings]);
 
   const analyticsData = useMemo(() => {
     const now = new Date();
@@ -215,6 +224,7 @@ export default function App() {
     });
     if (!res.ok) return showToast("Failed to save settings");
     showToast("Settings saved");
+    setIsSettingsEditing(false);
   };
 
   const saveOpenAiKey = async () => {
@@ -227,6 +237,20 @@ export default function App() {
     if (!res.ok) return showToast("Failed to save OpenAI key");
     setSettings((prev) => ({ ...prev, openai_api_key: openAiKeyInput.trim() }));
     showToast("OpenAI key saved permanently");
+    setIsSettingsEditing(false);
+  };
+
+  const clearOpenAiKey = async () => {
+    if (!window.confirm("Remove saved OpenAI fallback key?")) return;
+    const res = await fetch(`${API_BASE}/api/admin/settings`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings: { openai_api_key: "" } }),
+    });
+    if (!res.ok) return showToast("Failed to clear OpenAI key");
+    setOpenAiKeyInput("");
+    setSettings((prev) => ({ ...prev, openai_api_key: "" }));
+    showToast("OpenAI key cleared");
   };
 
   const totals = overview?.totals || {};
@@ -430,16 +454,29 @@ export default function App() {
 
           {activeTab === "settings" ? (
             <div className="card">
-              <div className="card-header"><div className="card-title">Settings</div><button className="card-action" onClick={() => void saveSettings()}>Save</button></div>
+              <div className="card-header">
+                <div className="card-title">Settings</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {!isSettingsEditing ? (
+                    <button className="card-action" onClick={() => setIsSettingsEditing(true)}>Edit</button>
+                  ) : (
+                    <>
+                      <button className="card-action" onClick={() => void saveSettings()}>Save</button>
+                      <button className="card-action" onClick={() => { setIsSettingsEditing(false); void loadAll(); }}>Cancel</button>
+                    </>
+                  )}
+                </div>
+              </div>
               <div className="card-body">
                 <pre style={{ whiteSpace: "pre-wrap", color: "var(--cream)", marginBottom: 16 }}>
-                  {JSON.stringify(settings, null, 2)}
+                  {JSON.stringify(settingsPreview, null, 2)}
                 </pre>
                 <div className="form-group">
                   <label className="form-label">Model</label>
                   <input
                     className="form-input"
                     value={settings.chatbot_config?.model || ""}
+                    disabled={!isSettingsEditing}
                     onChange={(e) => setSettings((prev) => ({ ...prev, chatbot_config: { ...(prev.chatbot_config || {}), model: e.target.value } }))}
                   />
                 </div>
@@ -448,6 +485,7 @@ export default function App() {
                   <input
                     className="form-input"
                     value={settings.chatbot_config?.booking_contact || ""}
+                    disabled={!isSettingsEditing}
                     onChange={(e) => setSettings((prev) => ({ ...prev, chatbot_config: { ...(prev.chatbot_config || {}), booking_contact: e.target.value } }))}
                   />
                 </div>
@@ -458,11 +496,17 @@ export default function App() {
                     type="password"
                     placeholder="sk-... (used when server env key is missing)"
                     value={openAiKeyInput}
+                    disabled={!isSettingsEditing}
                     onChange={(e) => setOpenAiKeyInput(e.target.value)}
                   />
-                  <button className="card-action" style={{ marginTop: 10 }} onClick={() => void saveOpenAiKey()}>
-                    Save OpenAI Key
-                  </button>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button className="card-action" disabled={!isSettingsEditing} onClick={() => void saveOpenAiKey()}>
+                      Save OpenAI Key
+                    </button>
+                    <button className="card-action" disabled={!isSettingsEditing} onClick={() => void clearOpenAiKey()}>
+                      Clear OpenAI Key
+                    </button>
+                  </div>
                   <small style={{ color: "var(--muted)" }}>
                     Saved in database. It stays after refresh/login/logout and is used automatically when env key is missing.
                   </small>
