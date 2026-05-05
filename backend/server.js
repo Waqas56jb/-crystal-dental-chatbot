@@ -188,6 +188,12 @@ function isOpenAiQuotaError(error) {
   return status === 429 || detail.includes("quota") || detail.includes("billing") || detail.includes("rate limit");
 }
 
+function isOpenAiKeyError(error) {
+  const detail = String(error?.message || "").toLowerCase();
+  const status = Number(error?.status || error?.code || 0);
+  return status === 401 || status === 403 || detail.includes("invalid api key") || detail.includes("incorrect api key");
+}
+
 function getOpenAiClient(apiKey) {
   const safeKey = cleanText(apiKey);
   if (!safeKey) return null;
@@ -450,26 +456,44 @@ app.post("/api/chat", async (req, res) => {
 
     const session = ensureSession(sessionId);
     await ensureSessionRow(sessionId, languageHint);
-    const { client: openaiClient, source: openAiSource } = await resolveOpenAiClient();
+    const adminKey = await getOpenAiApiKeyFromSettings();
+    const envClient = ENV_OPENAI_API_KEY ? getOpenAiClient(ENV_OPENAI_API_KEY) : null;
+    const adminClient = adminKey ? getOpenAiClient(adminKey) : null;
+    const openaiClient = envClient || adminClient;
     if (!openaiClient) {
       return res.status(500).json({
         error: "OpenAI API key missing",
         detail: "Set OPENAI_API_KEY in environment or configure openai_api_key in Admin Settings.",
       });
     }
-    if (openAiSource === "admin_settings") {
-      console.log("[AI] Using OpenAI key from admin settings fallback.");
-    }
+
     const [adminContext, knowledgeEntries] = await Promise.all([getActiveAdminContext(), getKnowledgeForPrompt(20)]);
 
-    const modelJson = await getModelJsonResponse({
-      openaiClient,
-      languageHint,
-      memory: session.memory,
-      message,
-      adminContext,
-      knowledgeEntries,
-    });
+    let modelJson;
+    try {
+      modelJson = await getModelJsonResponse({
+        openaiClient,
+        languageHint,
+        memory: session.memory,
+        message,
+        adminContext,
+        knowledgeEntries,
+      });
+    } catch (primaryError) {
+      const canFallbackToAdmin =
+        Boolean(envClient && adminClient) &&
+        (isOpenAiQuotaError(primaryError) || isOpenAiKeyError(primaryError));
+      if (!canFallbackToAdmin) throw primaryError;
+      console.warn("[AI] Env key failed, retrying with admin settings key.");
+      modelJson = await getModelJsonResponse({
+        openaiClient: adminClient,
+        languageHint,
+        memory: session.memory,
+        message,
+        adminContext,
+        knowledgeEntries,
+      });
+    }
 
     const reply = cleanText(modelJson.reply) || "How can I help you with dental services or booking today?";
     const topicAllowed = Boolean(modelJson.topic_allowed);
