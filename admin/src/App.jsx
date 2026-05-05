@@ -29,6 +29,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
   const [isSettingsEditing, setIsSettingsEditing] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -64,6 +65,14 @@ export default function App() {
 
   useEffect(() => {
     void loadAll();
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 900) setIsSidebarOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   const filteredInsights = useMemo(
@@ -255,10 +264,11 @@ export default function App() {
 
   const totals = overview?.totals || {};
   const pageMeta = pageTitles[activeTab];
+  const isMobile = typeof window !== "undefined" ? window.innerWidth <= 900 : false;
 
   return (
     <div className="app-shell">
-      <nav id="sidebar">
+      <nav id="sidebar" className={isSidebarOpen ? "open" : ""}>
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">🦷</div>
           <span className="sidebar-logo-text">Denta<span>Lux</span></span>
@@ -267,15 +277,24 @@ export default function App() {
         <div className="sidebar-section">Main Menu</div>
         <div className="sidebar-nav">
           {["dashboard", "conversations", "knowledge", "analytics", "languages", "services", "settings"].map((k) => (
-            <button key={k} className={`nav-item ${activeTab === k ? "active" : ""}`} onClick={() => setActiveTab(k)}>
+            <button
+              key={k}
+              className={`nav-item ${activeTab === k ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab(k);
+                if (isMobile) setIsSidebarOpen(false);
+              }}
+            >
               <span className="nav-icon">•</span>{k}
             </button>
           ))}
         </div>
       </nav>
+      {isSidebarOpen ? <button className="mobile-backdrop" onClick={() => setIsSidebarOpen(false)} aria-label="Close menu" /> : null}
 
       <div id="main">
         <div className="topbar">
+          <button className="menu-btn" onClick={() => setIsSidebarOpen((v) => !v)} aria-label="Toggle sidebar menu">☰</button>
           <div>
             <div className="topbar-title">{pageMeta[0]}</div>
             <div className="topbar-sub">{pageMeta[1]}</div>
