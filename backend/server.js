@@ -828,12 +828,16 @@ app.use((req, res) => {
   res.status(404).json({ error: `Route not found: ${req.method} ${req.path}` });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend listening on http://localhost:${PORT}`);
-  if (ENV_OPENAI_API_KEY) {
-    console.log("[AI] OpenAI key source: environment variable");
-  } else {
-    console.log("[AI] OPENAI_API_KEY env missing; will use admin settings fallback if configured.");
-  }
-  void logDatabaseConnectionStatus();
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Backend listening on http://localhost:${PORT}`);
+    if (ENV_OPENAI_API_KEY) {
+      console.log("[AI] OpenAI key source: environment variable");
+    } else {
+      console.log("[AI] OPENAI_API_KEY env missing; will use admin settings fallback if configured.");
+    }
+    void logDatabaseConnectionStatus();
+  });
+}
+
+module.exports = app;
