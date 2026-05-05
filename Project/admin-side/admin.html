@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DentaLux Admin — Chatbot Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A96E;
+    --gold-light: #E8D5B0;
+    --gold-dark: #9B7A45;
+    --navy: #0A1628;
+    --navy-mid: #112240;
+    --navy-light: #1E3A5F;
+    --sidebar: #0D1E36;
+    --cream: #FAF7F2;
+    --white: #FFFFFF;
+    --muted: #8A9BB0;
+    --green: #52D9A0;
+    --red: #FF6B6B;
+    --blue: #4FC3F7;
+    --orange: #FFB347;
+    --border: rgba(255,255,255,0.07);
+    --card: rgba(17,34,64,0.8);
+    --radius: 14px;
+  }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--cream);
+    display: flex; min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── SIDEBAR ─── */
+  #sidebar {
+    width: 260px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; top:0; left:0; bottom:0;
+    z-index: 100;
+    overflow-y: auto;
+    transition: transform 0.3s;
+  }
+  .sidebar-logo {
+    padding: 28px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sidebar-logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .sidebar-logo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700;
+    color: var(--white);
+  }
+  .sidebar-logo-text span { color: var(--gold); }
+  .sidebar-badge {
+    font-size: 10px;
+    background: rgba(82,217,160,0.15);
+    color: var(--green);
+    padding: 3px 8px;
+    border-radius: 50px;
+    margin-left: auto;
+  }
+  .sidebar-section {
+    padding: 24px 16px 8px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .sidebar-nav { padding: 0 12px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+    font-size: 14px; font-weight: 500;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+    text-decoration: none;
+  }
+  .nav-item:hover {
+    background: rgba(255,255,255,0.05);
+    color: var(--cream);
+  }
+  .nav-item.active {
+    background: rgba(201,169,110,0.12);
+    color: var(--gold);
+    border-color: rgba(201,169,110,0.2);
+  }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 50px;
+  }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 20px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .admin-profile {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .admin-avatar {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--navy-light), var(--gold-dark));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .admin-name { font-size: 13px; font-weight: 600; color: var(--white); }
+  .admin-role { font-size: 11px; color: var(--muted); }
+  .admin-logout {
+    margin-left: auto;
+    background: rgba(255,107,107,0.1);
+    border: none;
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--red);
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .admin-logout:hover { background: rgba(255,107,107,0.2); }
+
+  /* ─── MAIN ─── */
+  #main {
+    margin-left: 260px;
+    flex: 1;
+    display: flex; flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ─── TOPBAR ─── */
+  .topbar {
+    background: rgba(10,22,40,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 36px;
+    display: flex; align-items: center; gap: 20px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700;
+  }
+  .topbar-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .topbar-right {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .topbar-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 16px;
+    color: var(--cream);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .topbar-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
+  .topbar-btn.primary {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--navy);
+    font-weight: 700;
+    border-color: transparent;
+  }
+  .topbar-btn.primary:hover { box-shadow: 0 4px 20px rgba(201,169,110,0.4); }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse2 2s infinite;
+  }
+  @keyframes pulse2 { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  /* ─── CONTENT ─── */
+  .content { padding: 36px; flex: 1; }
+
+  /* ─── TABS ─── */
+  .tabs {
+    display: flex; gap: 4px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 32px;
+    width: fit-content;
+  }
+  .tab {
+    padding: 9px 20px;
+    border-radius: 9px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--navy);
+  }
+  .tab:not(.active):hover { color: var(--cream); background: rgba(255,255,255,0.05); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ─── STATS ROW ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .stat-card:hover { border-color: rgba(201,169,110,0.2); transform: translateY(-2px); }
+  .stat-card::before {
+    content: '';
+    position: absolute; top:0; left:0; right:0;
+    height: 2px;
+    background: linear-gradient(to right, var(--gold), var(--gold-dark));
+  }
+  .stat-icon {
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 16px;
+  }
+  .stat-icon.green { background: rgba(82,217,160,0.12); }
+  .stat-icon.gold { background: rgba(201,169,110,0.12); }
+  .stat-icon.blue { background: rgba(79,195,247,0.12); }
+  .stat-icon.orange { background: rgba(255,179,71,0.12); }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; font-weight: 900;
+    color: var(--white);
+    line-height: 1;
+  }
+  .stat-label { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .stat-change {
+    font-size: 12px; font-weight: 600;
+    margin-top: 10px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .stat-change.up { color: var(--green); }
+  .stat-change.down { color: var(--red); }
+
+  /* ─── GRID ─── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .grid-3-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+  /* ─── CARD ─── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title {
+    font-size: 15px; font-weight: 700;
+    color: var(--white);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-body { padding: 24px; }
+  .card-action {
+    background: rgba(201,169,110,0.1);
+    border: 1px solid rgba(201,169,110,0.2);
+    color: var(--gold);
+    font-size: 12px; font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .card-action:hover { background: var(--gold); color: var(--navy); }
+
+  /* ─── CHART BAR ─── */
+  .chart-bars {
+    display: flex; align-items: flex-end; gap: 8px;
+    height: 140px;
+  }
+  .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 120px; }
+  .bar {
+    width: 100%;
+    background: linear-gradient(to top, var(--gold-dark), var(--gold));
+    border-radius: 4px 4px 0 0;
+    transition: height 1s cubic-bezier(0.23,1,0.32,1);
+    min-height: 4px;
+    position: relative;
+  }
+  .bar:hover { filter: brightness(1.2); }
+  .bar-label { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; }
+
+  /* ─── CONVERSATIONS TABLE ─── */
+  .conv-table { width: 100%; border-collapse: collapse; }
+  .conv-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .conv-table td {
+    padding: 14px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .conv-table tr:last-child td { border-bottom: none; }
+  .conv-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .lang-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 3px 10px;
+    font-size: 11px; font-weight: 600;
+  }
+  .status-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 50px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .status-pill.resolved { background: rgba(82,217,160,0.15); color: var(--green); }
+  .status-pill.pending { background: rgba(255,179,71,0.15); color: var(--orange); }
+  .status-pill.booked { background: rgba(201,169,110,0.15); color: var(--gold); }
+
+  /* ─── KNOWLEDGE BASE ─── */
+  .kb-toolbar {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .kb-search {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    min-width: 280px;
+    transition: border-color 0.2s;
+  }
+  .kb-search:focus { border-color: rgba(201,169,110,0.4); }
+  .kb-search::placeholder { color: var(--muted); }
+  .filter-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    border-color: rgba(201,169,110,0.3);
+    color: var(--gold);
+    background: rgba(201,169,110,0.08);
+  }
+  .kb-grid { display: flex; flex-direction: column; gap: 12px; }
+  .kb-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: start;
+    transition: all 0.2s;
+  }
+  .kb-item:hover { border-color: rgba(201,169,110,0.2); background: rgba(255,255,255,0.04); }
+  .kb-q { font-size: 14px; font-weight: 600; color: var(--white); margin-bottom: 8px; }
+  .kb-a { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .kb-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .kb-tag {
+    font-size: 10px; font-weight: 700;
+    padding: 3px 9px; border-radius: 50px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .kb-tag.en { background: rgba(79,195,247,0.15); color: var(--blue); }
+  .kb-tag.hu { background: rgba(255,179,71,0.15); color: var(--orange); }
+  .kb-tag.fr { background: rgba(82,217,160,0.15); color: var(--green); }
+  .kb-tag.service { background: rgba(201,169,110,0.15); color: var(--gold); }
+  .kb-actions { display: flex; gap: 8px; }
+  .kb-edit, .kb-del {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: transparent;
+  }
+  .kb-edit { color: var(--gold); }
+  .kb-edit:hover { background: rgba(201,169,110,0.15); }
+  .kb-del { color: var(--red); }
+  .kb-del:hover { background: rgba(255,107,107,0.15); }
+
+  /* ─── ADD KB FORM ─── */
+  .add-kb-form {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,169,110,0.2);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 28px;
+  }
+  .add-kb-form h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--white);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-group.full { grid-column: span 2; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+  .form-input, .form-textarea, .form-select {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: rgba(201,169,110,0.4); }
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--muted); }
+  .form-textarea { resize: vertical; min-height: 100px; }
+  .form-select option { background: var(--navy-mid); }
+  .form-submit {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--navy);
+    border: none;
+    padding: 12px 28px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .form-submit:hover { box-shadow: 0 6px 24px rgba(201,169,110,0.4); transform: translateY(-1px); }
+
+  /* ─── SETTINGS ─── */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .setting-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-info { flex: 1; }
+  .setting-name { font-size: 14px; font-weight: 600; color: var(--white); }
+  .setting-desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .toggle {
+    width: 46px; height: 26px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s;
+    flex-shrink: 0;
+    border: none;
+  }
+  .toggle.on { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 20px; height: 20px;
+    background: var(--white);
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .toggle.on::after { transform: translateX(20px); }
+
+  /* ─── CHAT PREVIEW ─── */
+  .chat-preview {
+    background: var(--navy);
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .chat-preview-header {
+    background: var(--navy-mid);
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .chat-preview-msgs {
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    max-height: 300px; overflow-y: auto;
+  }
+  .prev-msg { max-width: 80%; }
+  .prev-msg.bot { align-self: flex-start; }
+  .prev-msg.user { align-self: flex-end; }
+  .prev-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px; line-height: 1.5;
+  }
+  .prev-msg.bot .prev-bubble {
+    background: var(--navy-light);
+    color: var(--cream);
+    border-radius: 4px 12px 12px 12px;
+  }
+  .prev-msg.user .prev-bubble {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--navy);
+    font-weight: 500;
+    border-radius: 12px 4px 12px 12px;
+  }
+
+  /* ─── ANALYTICS DONUT ─── */
+  .donut-wrap { position: relative; width: 140px; height: 140px; margin: 0 auto; }
+  .donut-label {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .donut-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 900; color: var(--white);
+  }
+  .donut-sub { font-size: 11px; color: var(--muted); }
+  .legend { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-val { margin-left: auto; font-weight: 700; color: var(--white); }
+
+  /* ─── NOTIFICATIONS ─── */
+  .notif-list { display: flex; flex-direction: column; }
+  .notif-item {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-item:hover { background: rgba(255,255,255,0.02); }
+  .notif-item.unread { background: rgba(201,169,110,0.04); }
+  .notif-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .notif-dot.gold { background: var(--gold); }
+  .notif-dot.green { background: var(--green); }
+  .notif-dot.blue { background: var(--blue); }
+  .notif-dot.red { background: var(--red); }
+  .notif-text { font-size: 13px; color: var(--cream); line-height: 1.5; flex: 1; }
+  .notif-text strong { color: var(--white); }
+  .notif-time { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.2); border-radius: 3px; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 1200px) {
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3-1 { grid-template-columns: 1fr; }
+    .settings-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: span 1; }
+  }
+  @media (max-width: 900px) {
+    #sidebar { transform: translateX(-260px); }
+    #main { margin-left: 0; }
+  }
+
+  /* ─── TOAST ─── */
+  #toast {
+    position: fixed; bottom: 32px; right: 32px;
+    background: var(--navy-mid);
+    border: 1px solid rgba(201,169,110,0.3);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 14px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 9999;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">🦷</div>
+    <span class="sidebar-logo-text">Denta<span>Lux</span></span>
+    <span class="sidebar-badge">Admin</span>
+  </div>
+
+  <div class="sidebar-section">Main Menu</div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" onclick="showTab('dashboard',this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showTab('conversations',this)">
+      <span class="nav-icon">💬</span> Conversations
+      <span class="nav-badge">12</span>
+    </div>
+    <div class="nav-item" onclick="showTab('knowledge',this)">
+      <span class="nav-icon">🧠</span> Knowledge Base
+    </div>
+    <div class="nav-item" onclick="showTab('analytics',this)">
+      <span class="nav-icon">📈</span> Analytics
+    </div>
+  </div>
+
+  <div class="sidebar-section">Configuration</div>
+  <div class="sidebar-nav">
+    <div class="nav-item" onclick="showTab('languages',this)">
+      <span class="nav-icon">🌍</span> Languages
+    </div>
+    <div class="nav-item" onclick="showTab('services',this)">
+      <span class="nav-icon">🦷</span> Services & Pricing
+    </div>
+    <div class="nav-item" onclick="showTab('settings',this)">
+      <span class="nav-icon">⚙️</span> Chatbot Settings
+    </div>
+  </div>
+
+  <div class="sidebar-section">Other</div>
+  <div class="sidebar-nav">
+    <a href="index.html" class="nav-item">
+      <span class="nav-icon">🌐</span> View Website
+    </a>
+    <div class="nav-item">
+      <span class="nav-icon">📥</span> Export Data
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="admin-profile">
+      <div class="admin-avatar">👤</div>
+      <div>
+        <div class="admin-name">Dr. Admin</div>
+        <div class="admin-role">Clinic Manager</div>
+      </div>
+      <button class="admin-logout" title="Logout">⏻</button>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-sub" id="pageSub">Welcome back — here's what's happening today</div>
+    </div>
+    <div class="topbar-right">
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--green);">
+        <div class="status-dot"></div> Chatbot Live
+      </div>
+      <button class="topbar-btn" onclick="showToast('🔄 Data refreshed!')">🔄 Refresh</button>
+      <button class="topbar-btn primary" onclick="showTab('knowledge',document.querySelector('.nav-item:nth-child(3)'))">+ Add Knowledge</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ─── DASHBOARD ─── -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon green">💬</div>
+          <div class="stat-num">1,284</div>
+          <div class="stat-label">Total Conversations</div>
+          <div class="stat-change up">↑ 18% this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon gold">📅</div>
+          <div class="stat-num">347</div>
+          <div class="stat-label">Bookings via Chatbot</div>
+          <div class="stat-change up">↑ 34% this week</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">🌍</div>
+          <div class="stat-num">3</div>
+          <div class="stat-label">Active Languages</div>
+          <div class="stat-change up">EN · HU · FR</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">⭐</div>
+          <div class="stat-num">4.9</div>
+          <div class="stat-label">Avg. Chat Rating</div>
+          <div class="stat-change up">↑ 0.2 this month</div>
+        </div>
+      </div>
+
+      <div class="grid-3-1">
+        <!-- Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📊 Weekly Conversations</div>
+            <button class="card-action" onclick="animateBars()">Refresh</button>
+          </div>
+          <div class="card-body">
+            <div class="chart-bars" id="chartBars">
+              <div class="bar-group"><div class="bar-wrap"><div class="bar" style="height:40%"></div></div><div class="bar-label">Mon</div></div>
+              <div class="bar-group"><div class="bar-wrap"><div class="bar" style="height:65%"></div></div><div class="bar-label">Tue</div></div>
+              <div class="bar-group"><div class="bar-wrap"><div class="bar" style="height:55%"></div></div><div class="bar-label">Wed</div></div>
+              <div class="bar-group"><div class="bar-wrap"><div class="bar" style="height:80%"></div></div><div class="bar-label">Thu</div></div>
+              <div class="bar-group"><div class="bar-wrap"><div class="bar" style="height:70%"></div></div><div class="bar-label">Fri</div></div>
+              <div class="bar-group"><div class="bar-wrap"><div class="bar" style="height:90%"></div></div><div class="bar-label">Sat</div></div>
+              <div class="bar-group"><div class="bar-wrap"><div class="bar" style="height:45%"></div></div><div class="bar-label">Sun</div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+              <div><div style="font-size:12px;color:var(--muted)">Total this week</div><div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--gold)">284</div></div>
+              <div><div style="font-size:12px;color:var(--muted)">Peak day</div><div style="font-size:16px;font-weight:700;color:var(--white);margin-top:4px">Saturday</div></div>
+              <div><div style="font-size:12px;color:var(--muted)">Resolved</div><div style="font-size:16px;font-weight:700;color:var(--green);margin-top:4px">94%</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔔 Activity</div>
+          </div>
+          <div class="notif-list">
+            <div class="notif-item unread">
+              <div class="notif-dot gold"></div>
+              <div class="notif-text"><strong>New booking</strong> — Pierre Martin requested implant consultation</div>
+              <div class="notif-time">2m ago</div>
+            </div>
+            <div class="notif-item unread">
+              <div class="notif-dot green"></div>
+              <div class="notif-text"><strong>FR chat</strong> — User asked about veneer pricing in French</div>
+              <div class="notif-time">8m ago</div>
+            </div>
+            <div class="notif-item">
+              <div class="notif-dot blue"></div>
+              <div class="notif-text"><strong>Knowledge base</strong> updated successfully with 3 new FAQs</div>
+              <div class="notif-time">1h ago</div>
+            </div>
+            <div class="notif-item">
+              <div class="notif-dot red"></div>
+              <div class="notif-text"><strong>Token alert</strong> — Monthly usage at 72%. Consider upgrading.</div>
+              <div class="notif-time">3h ago</div>
+            </div>
+            <div class="notif-item">
+              <div class="notif-dot gold"></div>
+              <div class="notif-text"><strong>HU chat</strong> — Kovács Péter booked emergency appointment</div>
+              <div class="notif-time">5h ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent convs -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💬 Recent Conversations</div>
+          <button class="card-action" onclick="showTab('conversations',null)">View All</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="conv-table">
+            <thead>
+              <tr>
+                <th>User</th><th>Message Preview</th><th>Language</th><th>Intent</th><th>Status</th><th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600;color:var(--white)">Pierre M.</td>
+                <td style="color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">J'ai besoin d'un rendez-vous pour des implants...</td>
+                <td><span class="lang-pill">🇫🇷 FR</span></td>
+                <td><span style="color:var(--gold)">Booking</span></td>
+                <td><span class="status-pill booked">Booked</span></td>
+                <td style="color:var(--muted);font-size:12px">2m ago</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:var(--white)">Horváth A.</td>
+                <td style="color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Mennyi a fogfehérítés ára?</td>
+                <td><span class="lang-pill">🇭🇺 HU</span></td>
+                <td><span style="color:var(--blue)">Pricing</span></td>
+                <td><span class="status-pill resolved">Resolved</span></td>
+                <td style="color:var(--muted);font-size:12px">14m ago</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:var(--white)">James T.</td>
+                <td style="color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">I have severe toothache since last night</td>
+                <td><span class="lang-pill">🇬🇧 EN</span></td>
+                <td><span style="color:var(--red)">Emergency</span></td>
+                <td><span class="status-pill booked">Booked</span></td>
+                <td style="color:var(--muted);font-size:12px">32m ago</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:var(--white)">Sophie L.</td>
+                <td style="color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">What's the difference between veneers and...</td>
+                <td><span class="lang-pill">🇬🇧 EN</span></td>
+                <td><span style="color:var(--muted)">Info</span></td>
+                <td><span class="status-pill resolved">Resolved</span></td>
+                <td style="color:var(--muted);font-size:12px">1h ago</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:var(--white)">Nagy B.</td>
+                <td style="color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Fogínyem vérzik evés közben</td>
+                <td><span class="lang-pill">🇭🇺 HU</span></td>
+                <td><span style="color:var(--orange)">Symptom</span></td>
+                <td><span class="status-pill pending">Pending</span></td>
+                <td style="color:var(--muted);font-size:12px">2h ago</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── CONVERSATIONS ─── -->
+    <div class="tab-content" id="tab-conversations">
+      <div class="tabs" style="margin-bottom:24px;">
+        <div class="tab active" onclick="filterConv('all',this)">All (47)</div>
+        <div class="tab" onclick="filterConv('pending',this)">Pending (8)</div>
+        <div class="tab" onclick="filterConv('booked',this)">Booked (12)</div>
+        <div class="tab" onclick="filterConv('resolved',this)">Resolved (27)</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💬 All Conversations</div>
+          <div style="display:flex;gap:8px;">
+            <select class="form-select" style="padding:6px 12px;font-size:12px;">
+              <option>All Languages</option>
+              <option>English</option>
+              <option>Hungarian</option>
+              <option>French</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="conv-table" id="convTable">
+            <thead>
+              <tr><th>User</th><th>Preview</th><th>Language</th><th>Intent</th><th>Service Suggested</th><th>Status</th><th>Date</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr data-status="booked"><td style="font-weight:600;color:var(--white)">Pierre Martin</td><td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">J'ai besoin d'implants dentaires...</td><td><span class="lang-pill">🇫🇷 FR</span></td><td>Booking</td><td style="color:var(--gold)">Implants</td><td><span class="status-pill booked">Booked</span></td><td style="color:var(--muted);font-size:12px">May 5</td><td><button class="card-action" onclick="showToast('Opening conversation...')">View</button></td></tr>
+              <tr data-status="pending"><td style="font-weight:600;color:var(--white)">Nagy Bálint</td><td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Fogínyem vérzik evés közben</td><td><span class="lang-pill">🇭🇺 HU</span></td><td>Symptom</td><td style="color:var(--orange)">Periodontal</td><td><span class="status-pill pending">Pending</span></td><td style="color:var(--muted);font-size:12px">May 5</td><td><button class="card-action" onclick="showToast('Opening conversation...')">View</button></td></tr>
+              <tr data-status="resolved"><td style="font-weight:600;color:var(--white)">Sophie Laurent</td><td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">What are veneers exactly?</td><td><span class="lang-pill">🇬🇧 EN</span></td><td>Info</td><td style="color:var(--blue)">Veneers</td><td><span class="status-pill resolved">Resolved</span></td><td style="color:var(--muted);font-size:12px">May 4</td><td><button class="card-action" onclick="showToast('Opening conversation...')">View</button></td></tr>
+              <tr data-status="booked"><td style="font-weight:600;color:var(--white)">James Thompson</td><td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Severe toothache since last night</td><td><span class="lang-pill">🇬🇧 EN</span></td><td>Emergency</td><td style="color:var(--red)">Emergency</td><td><span class="status-pill booked">Booked</span></td><td style="color:var(--muted);font-size:12px">May 4</td><td><button class="card-action" onclick="showToast('Opening conversation...')">View</button></td></tr>
+              <tr data-status="resolved"><td style="font-weight:600;color:var(--white)">Horváth Anna</td><td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Mennyi a fogfehérítés ára?</td><td><span class="lang-pill">🇭🇺 HU</span></td><td>Pricing</td><td style="color:var(--gold)">Whitening</td><td><span class="status-pill resolved">Resolved</span></td><td style="color:var(--muted);font-size:12px">May 3</td><td><button class="card-action" onclick="showToast('Opening conversation...')">View</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── KNOWLEDGE BASE ─── -->
+    <div class="tab-content" id="tab-knowledge">
+      <div class="add-kb-form">
+        <h3>➕ Add New Knowledge Entry</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Question / Trigger</label>
+            <input class="form-input" placeholder="e.g. How much does whitening cost?" id="kbQ">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="kbCat">
+              <option value="pricing">Pricing</option>
+              <option value="service">Service Info</option>
+              <option value="symptom">Symptom</option>
+              <option value="booking">Booking</option>
+              <option value="general">General FAQ</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Answer (English)</label>
+            <textarea class="form-textarea" placeholder="Enter the English answer..." id="kbAen"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Answer (Hungarian)</label>
+            <textarea class="form-textarea" placeholder="Hungarian translation..." id="kbAhu"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Answer (French)</label>
+            <textarea class="form-textarea" placeholder="French translation..." id="kbAfr"></textarea>
+          </div>
+        </div>
+        <button class="form-submit" onclick="addKBEntry()">➕ Add to Knowledge Base</button>
+      </div>
+
+      <div class="kb-toolbar">
+        <input class="kb-search" placeholder="🔍 Search knowledge base..." oninput="filterKB(this.value)">
+        <button class="filter-btn active" onclick="filterKBCat('all',this)">All</button>
+        <button class="filter-btn" onclick="filterKBCat('pricing',this)">Pricing</button>
+        <button class="filter-btn" onclick="filterKBCat('symptom',this)">Symptoms</button>
+        <button class="filter-btn" onclick="filterKBCat('booking',this)">Booking</button>
+        <button class="filter-btn" onclick="filterKBCat('service',this)">Services</button>
+      </div>
+
+      <div class="kb-grid" id="kbGrid">
+        <div class="kb-item" data-cat="pricing">
+          <div>
+            <div class="kb-q">💰 How much does teeth whitening cost?</div>
+            <div class="kb-a">Professional teeth whitening starts from €120 per session. Results last 12–18 months. We also offer take-home kits from €60.</div>
+            <div class="kb-tags">
+              <span class="kb-tag en">EN</span><span class="kb-tag hu">HU</span><span class="kb-tag fr">FR</span>
+              <span class="kb-tag service">Whitening</span>
+            </div>
+          </div>
+          <div class="kb-actions">
+            <button class="kb-edit" onclick="showToast('✏️ Edit mode enabled')">✏️</button>
+            <button class="kb-del" onclick="deleteKB(this)">🗑</button>
+          </div>
+        </div>
+        <div class="kb-item" data-cat="symptom">
+          <div>
+            <div class="kb-q">🦷 What should I do if I have a toothache?</div>
+            <div class="kb-a">Toothache can indicate cavities, cracked teeth, or abscesses. We recommend our Emergency Care service for same-day treatment. Call +36 1 234 5678 immediately.</div>
+            <div class="kb-tags">
+              <span class="kb-tag en">EN</span><span class="kb-tag hu">HU</span><span class="kb-tag fr">FR</span>
+              <span class="kb-tag service">Emergency</span>
+            </div>
+          </div>
+          <div class="kb-actions">
+            <button class="kb-edit" onclick="showToast('✏️ Edit mode enabled')">✏️</button>
+            <button class="kb-del" onclick="deleteKB(this)">🗑</button>
+          </div>
+        </div>
+        <div class="kb-item" data-cat="service">
+          <div>
+            <div class="kb-q">💎 What are porcelain veneers?</div>
+            <div class="kb-a">Porcelain veneers are ultra-thin ceramic shells bonded to the front of teeth. They correct chips, discoloration, and shape. Prices from €350 per tooth.</div>
+            <div class="kb-tags">
+              <span class="kb-tag en">EN</span><span class="kb-tag hu">HU</span>
+              <span class="kb-tag service">Veneers</span>
+            </div>
+          </div>
+          <div class="kb-actions">
+            <button class="kb-edit" onclick="showToast('✏️ Edit mode enabled')">✏️</button>
+            <button class="kb-del" onclick="deleteKB(this)">🗑</button>
+          </div>
+        </div>
+        <div class="kb-item" data-cat="booking">
+          <div>
+            <div class="kb-q">📅 How do I book an appointment?</div>
+            <div class="kb-a">You can book via: (1) This chatbot, (2) Call +36 1 234 5678, (3) Online form at dentalux.com/booking. Same-day slots available for emergencies.</div>
+            <div class="kb-tags">
+              <span class="kb-tag en">EN</span><span class="kb-tag hu">HU</span><span class="kb-tag fr">FR</span>
+              <span class="kb-tag service">Booking</span>
+            </div>
+          </div>
+          <div class="kb-actions">
+            <button class="kb-edit" onclick="showToast('✏️ Edit mode enabled')">✏️</button>
+            <button class="kb-del" onclick="deleteKB(this)">🗑</button>
+          </div>
+        </div>
+        <div class="kb-item" data-cat="pricing">
+          <div>
+            <div class="kb-q">🔬 How much do dental implants cost?</div>
+            <div class="kb-a">Dental implant prices start from €800 per implant. This includes the titanium post, abutment, and crown. Payment plans available. Free consultation included.</div>
+            <div class="kb-tags">
+              <span class="kb-tag en">EN</span><span class="kb-tag fr">FR</span>
+              <span class="kb-tag service">Implants</span>
+            </div>
+          </div>
+          <div class="kb-actions">
+            <button class="kb-edit" onclick="showToast('✏️ Edit mode enabled')">✏️</button>
+            <button class="kb-del" onclick="deleteKB(this)">🗑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── ANALYTICS ─── -->
+    <div class="tab-content" id="tab-analytics">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🌍 Language Distribution</div></div>
+          <div class="card-body" style="display:flex;gap:32px;align-items:center;flex-wrap:wrap;">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 100 100" width="140" height="140">
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#1E3A5F" stroke-width="18"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#C9A96E" stroke-width="18" stroke-dasharray="87 133" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#4FC3F7" stroke-width="18" stroke-dasharray="47 173" stroke-dashoffset="-87" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#52D9A0" stroke-width="18" stroke-dasharray="86 134" stroke-dashoffset="-134" transform="rotate(-90 50 50)"/>
+              </svg>
+              <div class="donut-label">
+                <div class="donut-num">3</div>
+                <div class="donut-sub">Languages</div>
+              </div>
+            </div>
+            <div class="legend" style="flex:1">
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--gold)"></div>
+                🇬🇧 English
+                <div class="legend-val">48%</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--orange)"></div>
+                🇭🇺 Hungarian
+                <div class="legend-val">36%</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--green)"></div>
+                🇫🇷 French
+                <div class="legend-val">16%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">🎯 Top Requested Services</div></div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>🦷 Teeth Whitening</span><span style="color:var(--gold);font-weight:700">34%</span></div>
+                <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;"><div style="height:100%;width:34%;background:linear-gradient(to right,var(--gold-dark),var(--gold));border-radius:3px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>🔬 Implants</span><span style="color:var(--gold);font-weight:700">24%</span></div>
+                <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;"><div style="height:100%;width:24%;background:linear-gradient(to right,var(--gold-dark),var(--gold));border-radius:3px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>💎 Veneers</span><span style="color:var(--gold);font-weight:700">19%</span></div>
+                <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;"><div style="height:100%;width:19%;background:linear-gradient(to right,var(--gold-dark),var(--gold));border-radius:3px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>🚨 Emergency</span><span style="color:var(--red);font-weight:700">15%</span></div>
+                <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;"><div style="height:100%;width:15%;background:var(--red);border-radius:3px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>😁 Orthodontics</span><span style="color:var(--blue);font-weight:700">8%</span></div>
+                <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;"><div style="height:100%;width:8%;background:var(--blue);border-radius:3px;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">💰 Token Usage & Cost Estimation</div></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:24px;">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:20px;">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">This Month</div>
+              <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--gold)">$2.34</div>
+              <div style="font-size:12px;color:var(--green);margin-top:6px">↓ Well within budget</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:20px;">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Tokens Used</div>
+              <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--white)">48K</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px">of ~200K budget</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:20px;">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Avg per Chat</div>
+              <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--white)">374</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px">tokens / conversation</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:20px;">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Projected</div>
+              <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--white)">$4.80</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px">end of month</div>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:4px;">
+            <div style="height:20px;background:rgba(255,255,255,0.05);border-radius:8px;overflow:hidden;">
+              <div style="height:100%;width:24%;background:linear-gradient(to right,var(--gold-dark),var(--gold));border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;">
+                <span style="font-size:11px;font-weight:700;color:var(--navy)">24%</span>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px;">Budget utilization — 24% used this month</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── LANGUAGES ─── -->
+    <div class="tab-content" id="tab-languages">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🌍 Active Languages</div><button class="card-action" onclick="showToast('✅ Languages saved!')">Save Changes</button></div>
+          <div class="notif-list">
+            <div class="notif-item">
+              <div style="font-size:24px">🇬🇧</div>
+              <div class="notif-text"><strong>English</strong><br><span style="font-size:12px;color:var(--muted)">Primary language · Fully trained · 48% of traffic</span></div>
+              <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+            </div>
+            <div class="notif-item">
+              <div style="font-size:24px">🇭🇺</div>
+              <div class="notif-text"><strong>Hungarian</strong><br><span style="font-size:12px;color:var(--muted)">Active · Professionally translated · 36% of traffic</span></div>
+              <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+            </div>
+            <div class="notif-item">
+              <div style="font-size:24px">🇫🇷</div>
+              <div class="notif-text"><strong>French</strong><br><span style="font-size:12px;color:var(--orange)">⚠️ Translation in progress — 16% of traffic</span></div>
+              <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+            </div>
+          </div>
+          <div style="padding:20px 24px;border-top:1px solid var(--border);">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Add another language</div>
+            <div style="display:flex;gap:10px;">
+              <select class="form-select" style="flex:1;">
+                <option>🇩🇪 German</option>
+                <option>🇪🇸 Spanish</option>
+                <option>🇷🇺 Russian</option>
+                <option>🇦🇪 Arabic</option>
+              </select>
+              <button class="form-submit" onclick="showToast('🌍 Language added! Please add translations in Knowledge Base.')">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">🤖 Live Chatbot Preview</div></div>
+          <div class="card-body">
+            <div class="chat-preview">
+              <div class="chat-preview-header">
+                <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;">🦷</div>
+                <div style="flex:1;margin-left:10px;">
+                  <div style="font-size:13px;font-weight:700;color:var(--white)">DentaLux AI</div>
+                  <div style="font-size:11px;color:var(--green)">● Online</div>
+                </div>
+                <select class="chat-lang-select" id="previewLang" onchange="updatePreview()">
+                  <option value="en">🇬🇧 EN</option>
+                  <option value="hu">🇭🇺 HU</option>
+                  <option value="fr">🇫🇷 FR</option>
+                </select>
+              </div>
+              <div class="chat-preview-msgs" id="previewMsgs">
+                <div class="prev-msg bot"><div class="prev-bubble" id="previewWelcome">Hello! 👋 I'm your DentaLux AI. How can I help?</div></div>
+                <div class="prev-msg user"><div class="prev-bubble">How much does whitening cost?</div></div>
+                <div class="prev-msg bot"><div class="prev-bubble">✨ Teeth whitening starts from €120! Brightens up to 10 shades in one session. Would you like to book?</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SERVICES ─── -->
+    <div class="tab-content" id="tab-services">
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header"><div class="card-title">💰 Services & Pricing Database</div><button class="card-action" onclick="showToast('✅ Prices saved to knowledge base!')">Save All</button></div>
+        <div style="overflow-x:auto;">
+          <table class="conv-table" id="servicesTable">
+            <thead><tr><th>Service</th><th>Price From</th><th>Duration</th><th>Languages</th><th>Active</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600;color:var(--white)">🦷 Teeth Whitening</td><td><input class="form-input" value="€120" style="width:100px;padding:6px 10px;font-size:13px;"></td><td><input class="form-input" value="60 min" style="width:90px;padding:6px 10px;font-size:13px;"></td><td><span class="lang-pill">EN</span> <span class="lang-pill">HU</span> <span class="lang-pill">FR</span></td><td><button class="toggle on" onclick="this.classList.toggle('on')"></button></td></tr>
+              <tr><td style="font-weight:600;color:var(--white)">💎 Porcelain Veneers</td><td><input class="form-input" value="€350/tooth" style="width:120px;padding:6px 10px;font-size:13px;"></td><td><input class="form-input" value="90 min" style="width:90px;padding:6px 10px;font-size:13px;"></td><td><span class="lang-pill">EN</span> <span class="lang-pill">HU</span> <span class="lang-pill">FR</span></td><td><button class="toggle on" onclick="this.classList.toggle('on')"></button></td></tr>
+              <tr><td style="font-weight:600;color:var(--white)">🔬 Dental Implants</td><td><input class="form-input" value="€800" style="width:100px;padding:6px 10px;font-size:13px;"></td><td><input class="form-input" value="2–3 hrs" style="width:90px;padding:6px 10px;font-size:13px;"></td><td><span class="lang-pill">EN</span> <span class="lang-pill">FR</span></td><td><button class="toggle on" onclick="this.classList.toggle('on')"></button></td></tr>
+              <tr><td style="font-weight:600;color:var(--white)">😁 Orthodontics</td><td><input class="form-input" value="€1,200" style="width:100px;padding:6px 10px;font-size:13px;"></td><td><input class="form-input" value="45 min" style="width:90px;padding:6px 10px;font-size:13px;"></td><td><span class="lang-pill">EN</span> <span class="lang-pill">HU</span></td><td><button class="toggle on" onclick="this.classList.toggle('on')"></button></td></tr>
+              <tr><td style="font-weight:600;color:var(--white)">🚨 Emergency Care</td><td><input class="form-input" value="€80" style="width:100px;padding:6px 10px;font-size:13px;"></td><td><input class="form-input" value="30 min" style="width:90px;padding:6px 10px;font-size:13px;"></td><td><span class="lang-pill">EN</span> <span class="lang-pill">HU</span> <span class="lang-pill">FR</span></td><td><button class="toggle on" onclick="this.classList.toggle('on')"></button></td></tr>
+              <tr><td style="font-weight:600;color:var(--white)">✨ Smile Makeover</td><td><input class="form-input" value="€2,500" style="width:100px;padding:6px 10px;font-size:13px;"></td><td><input class="form-input" value="Custom" style="width:90px;padding:6px 10px;font-size:13px;"></td><td><span class="lang-pill">EN</span> <span class="lang-pill">HU</span> <span class="lang-pill">FR</span></td><td><button class="toggle on" onclick="this.classList.toggle('on')"></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button class="topbar-btn primary" onclick="showToast('✅ All service data pushed to chatbot knowledge base!')">🚀 Push to Chatbot</button>
+        <button class="topbar-btn" onclick="showToast('➕ Add service row...')">➕ Add Service</button>
+      </div>
+    </div>
+
+    <!-- ─── SETTINGS ─── -->
+    <div class="tab-content" id="tab-settings">
+      <div class="settings-grid">
+        <div class="setting-section">
+          <div class="card-header" style="padding:18px 24px;"><div class="card-title">🤖 AI Behavior</div></div>
+          <div class="setting-row"><div class="setting-info"><div class="setting-name">Smart Symptom Detection</div><div class="setting-desc">Suggest services based on patient symptoms</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="setting-row"><div class="setting-info"><div class="setting-name">Auto Language Detection</div><div class="setting-desc">Detect user language and respond accordingly</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="setting-row"><div class="setting-info"><div class="setting-name">Grammar Auto-Correction</div><div class="setting-desc">Fix spelling/grammar in responses</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="setting-row"><div class="setting-info"><div class="setting-name">Booking Integration</div><div class="setting-desc">Allow chatbot to direct users to booking</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="setting-row"><div class="setting-info"><div class="setting-name">Fallback to Human Support</div><div class="setting-desc">Show support contact when AI can't help</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+        </div>
+        <div class="setting-section">
+          <div class="card-header" style="padding:18px 24px;"><div class="card-title">⚙️ Chatbot Config</div></div>
+          <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+            <div class="setting-name">OpenAI Model</div>
+            <select class="form-select" style="width:100%"><option>gpt-4o (Recommended)</option><option>gpt-3.5-turbo (Faster)</option></select>
+          </div>
+          <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+            <div class="setting-name">Welcome Message (EN)</div>
+            <textarea class="form-textarea" style="width:100%;min-height:70px;">Hello! 👋 I'm your DentaLux AI assistant. Tell me about your dental concerns or ask about our services!</textarea>
+          </div>
+          <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+            <div class="setting-name">Booking Contact</div>
+            <input class="form-input" value="+36 1 234 5678" style="width:100%">
+          </div>
+          <div style="padding:20px 24px;">
+            <button class="form-submit" onclick="showToast('✅ Settings saved successfully!')">💾 Save Settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">✅ <span id="toastMsg">Action completed</span></div>
+
+<script>
+// Tab switching
+const pageTitles = {
+  dashboard: ['Dashboard', "Welcome back — here's what's happening today"],
+  conversations: ['Conversations', 'All patient chatbot conversations'],
+  knowledge: ['Knowledge Base', 'Manage what your AI knows'],
+  analytics: ['Analytics', 'Deep dive into chatbot performance'],
+  languages: ['Languages', 'Manage multilingual support (EN · HU · FR)'],
+  services: ['Services & Pricing', 'Manage services database'],
+  settings: ['Chatbot Settings', 'Configure AI behavior and responses']
+};
+function showTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const tab = document.getElementById('tab-'+name);
+  if(tab) tab.classList.add('active');
+  if(el) el.classList.add('active');
+  const meta = pageTitles[name];
+  if(meta) {
+    document.getElementById('pageTitle').textContent = meta[0];
+    document.getElementById('pageSub').textContent = meta[1];
+  }
+}
+
+// Filter conversations
+function filterConv(status, el) {
+  document.querySelectorAll('#tab-conversations .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const rows = document.querySelectorAll('#convTable tbody tr');
+  rows.forEach(r => {
+    r.style.display = (status==='all' || r.dataset.status===status) ? '' : 'none';
+  });
+}
+
+// Knowledge base
+function addKBEntry() {
+  const q = document.getElementById('kbQ').value.trim();
+  const a = document.getElementById('kbAen').value.trim();
+  const cat = document.getElementById('kbCat').value;
+  if(!q || !a) { showToast('⚠️ Please fill in the question and English answer.'); return; }
+  const grid = document.getElementById('kbGrid');
+  const item = document.createElement('div');
+  item.className = 'kb-item'; item.dataset.cat = cat;
+  item.innerHTML = `<div><div class="kb-q">❓ ${q}</div><div class="kb-a">${a}</div><div class="kb-tags"><span class="kb-tag en">EN</span><span class="kb-tag service">${cat}</span></div></div><div class="kb-actions"><button class="kb-edit" onclick="showToast('✏️ Edit mode')">✏️</button><button class="kb-del" onclick="deleteKB(this)">🗑</button></div>`;
+  grid.insertBefore(item, grid.firstChild);
+  ['kbQ','kbAen','kbAhu','kbAfr'].forEach(id => document.getElementById(id).value='');
+  showToast('✅ Added to knowledge base!');
+}
+function deleteKB(btn) {
+  if(confirm('Delete this entry?')) { btn.closest('.kb-item').remove(); showToast('🗑 Entry deleted.'); }
+}
+function filterKB(val) {
+  document.querySelectorAll('.kb-item').forEach(item => {
+    const txt = item.textContent.toLowerCase();
+    item.style.display = txt.includes(val.toLowerCase()) ? '' : 'none';
+  });
+}
+function filterKBCat(cat, el) {
+  document.querySelectorAll('.kb-toolbar .filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.kb-item').forEach(item => {
+    item.style.display = (cat==='all' || item.dataset.cat===cat) ? '' : 'none';
+  });
+}
+
+// Preview lang
+const previewTexts = {
+  en: "Hello! 👋 I'm your DentaLux AI. How can I help you today?",
+  hu: "Szia! 👋 A DentaLux AI asszisztense vagyok. Miben segíthetek?",
+  fr: "Bonjour! 👋 Je suis l'IA DentaLux. Comment puis-je vous aider?"
+};
+function updatePreview() {
+  const lang = document.getElementById('previewLang').value;
+  document.getElementById('previewWelcome').textContent = previewTexts[lang];
+}
+
+// Bar chart animation
+function animateBars() {
+  const bars = document.querySelectorAll('#chartBars .bar');
+  bars.forEach(b => {
+    const h = Math.floor(Math.random()*75+20)+'%';
+    b.style.height = h;
+  });
+}
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Init bar animation
+setTimeout(animateBars, 500);
+</script>
+</body>
+</html>
