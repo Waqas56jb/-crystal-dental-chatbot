@@ -182,6 +182,12 @@ function cleanText(input) {
   return typeof input === "string" ? input.trim() : "";
 }
 
+function isOpenAiQuotaError(error) {
+  const detail = String(error?.message || "").toLowerCase();
+  const status = Number(error?.status || error?.code || 0);
+  return status === 429 || detail.includes("quota") || detail.includes("billing") || detail.includes("rate limit");
+}
+
 function getOpenAiClient(apiKey) {
   const safeKey = cleanText(apiKey);
   if (!safeKey) return null;
@@ -538,6 +544,20 @@ app.post("/api/chat", async (req, res) => {
     });
   } catch (error) {
     console.error("POST /api/chat error:", error);
+    if (isOpenAiQuotaError(error)) {
+      return res.json({
+        reply:
+          "Our AI assistant is temporarily busy due to API quota limits. Please try again shortly, or contact clinic support for immediate booking help.",
+        topicAllowed: true,
+        suggestedService: { primary: "Consultation", secondary: "Emergency Care" },
+        bookingIntent: false,
+        nextQuestion: "Would you like us to connect you with human support now?",
+        leadCaptured: false,
+        insight: { intent: "support", urgency: "medium", sentiment: "neutral" },
+        memory: { turnsRemembered: 0, maxTurns: 20 },
+        fallback: "openai_quota_exceeded",
+      });
+    }
     return res.status(500).json({
       error: "Chat processing failed",
       detail: error.message,
