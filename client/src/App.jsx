@@ -1,11 +1,7 @@
 import { useEffect } from "react";
 import "./App.css";
 
-const DEPLOYED_CHAT_API_BASE = "https://crystal-dental-chatbot-backend.vercel.app";
-const CHAT_API_BASE =
-  import.meta.env.VITE_CHAT_API_BASE && !String(import.meta.env.VITE_CHAT_API_BASE).includes("localhost")
-    ? import.meta.env.VITE_CHAT_API_BASE
-    : DEPLOYED_CHAT_API_BASE;
+const CHAT_API_BASE = "https://crystal-dental-chatbot-backend.vercel.app";
 const CHAT_SESSION_KEY = "dentalux_chat_session_id";
 
 const pageMarkup = `<div class="cursor" id="cursor"></div>
