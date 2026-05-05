@@ -444,6 +444,26 @@ app.get("/api/leads", async (_req, res) => {
   }
 });
 
+app.patch("/api/leads/:id/status", async (req, res) => {
+  try {
+    const id = cleanText(req.params?.id);
+    const status = cleanText(req.body?.status || "confirmed").toLowerCase();
+    const allowed = new Set(["new", "confirmed", "cancelled", "completed"]);
+    if (!id) return res.status(400).json({ error: "Lead id is required" });
+    if (!allowed.has(status)) return res.status(400).json({ error: "Invalid status value" });
+    const { data, error } = await supabase
+      .from("chat_leads")
+      .update({ status })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    res.json({ lead: data });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update lead status", detail: error.message });
+  }
+});
+
 app.post("/api/chat", async (req, res) => {
   try {
     const sessionId = cleanText(req.body?.sessionId) || "default-session";

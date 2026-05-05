@@ -4,6 +4,7 @@ const API_BASE = "https://crystal-dental-chatbot-backend.vercel.app";
 
 const pageTitles = {
   dashboard: ["Dashboard", "Live Supabase insights"],
+  appointments: ["Appointments", "Chatbot booking requests and confirmations"],
   conversations: ["Conversations", "All real user interactions"],
   knowledge: ["Knowledge Base", "Database-driven chatbot knowledge"],
   analytics: ["Analytics", "Daily, weekly and monthly metrics"],
@@ -15,6 +16,7 @@ const pageTitles = {
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [overview, setOverview] = useState(null);
+  const [leads, setLeads] = useState([]);
   const [insights, setInsights] = useState([]);
   const [knowledge, setKnowledge] = useState([]);
   const [services, setServices] = useState([]);
@@ -39,7 +41,7 @@ export default function App() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [o, i, k, s, l, st, c] = await Promise.all([
+      const [o, i, k, s, l, st, c, leadsRes] = await Promise.all([
         fetch(`${API_BASE}/api/admin/overview`).then((r) => r.json()),
         fetch(`${API_BASE}/api/insights`).then((r) => r.json()),
         fetch(`${API_BASE}/api/admin/knowledge`).then((r) => r.json()),
@@ -47,6 +49,7 @@ export default function App() {
         fetch(`${API_BASE}/api/admin/languages`).then((r) => r.json()),
         fetch(`${API_BASE}/api/admin/settings`).then((r) => r.json()),
         fetch(`${API_BASE}/api/admin/context`).then((r) => r.json()),
+        fetch(`${API_BASE}/api/leads`).then((r) => r.json()),
       ]);
       setOverview(o);
       setInsights(i.insights || []);
@@ -56,6 +59,7 @@ export default function App() {
       setSettings(st.settings || {});
       setOpenAiKeyInput(st?.settings?.openai_api_key || "");
       setContextText(c?.context?.context_text || "");
+      setLeads(leadsRes?.leads || []);
     } catch {
       showToast("Failed to load admin data");
     } finally {
@@ -236,6 +240,17 @@ export default function App() {
     setIsSettingsEditing(false);
   };
 
+  const updateLeadStatus = async (leadId, status) => {
+    const res = await fetch(`${API_BASE}/api/leads/${leadId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) return showToast("Failed to update appointment status");
+    showToast(`Appointment marked as ${status}`);
+    await loadAll();
+  };
+
   const saveOpenAiKey = async () => {
     if (!openAiKeyInput.trim()) return showToast("OpenAI key is required");
     const res = await fetch(`${API_BASE}/api/admin/settings`, {
@@ -276,7 +291,7 @@ export default function App() {
         </div>
         <div className="sidebar-section">Main Menu</div>
         <div className="sidebar-nav">
-          {["dashboard", "conversations", "knowledge", "analytics", "languages", "services", "settings"].map((k) => (
+          {["dashboard", "appointments", "conversations", "knowledge", "analytics", "languages", "services", "settings"].map((k) => (
             <button
               key={k}
               className={`nav-item ${activeTab === k ? "active" : ""}`}
@@ -312,6 +327,46 @@ export default function App() {
               <Stat icon="📅" color="gold" num={totals.appointments || 0} label="Appointments" />
               <Stat icon="💬" color="blue" num={totals.sessions || 0} label="Sessions" />
               <Stat icon="⭐" color="orange" num={totals.avgReview || "0.0"} label="Avg Review" />
+            </div>
+          ) : null}
+
+          {activeTab === "appointments" ? (
+            <div className="card">
+              <div className="card-header"><div className="card-title">Appointments from Chatbot</div></div>
+              <div style={{ overflowX: "auto" }}>
+                <table className="conv-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th><th>Phone</th><th>Email</th><th>Service</th><th>Date</th><th>Notes</th><th>Status</th><th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.length === 0 ? (
+                      <tr><td colSpan={8} style={{ color: "var(--muted)" }}>No chatbot appointments yet.</td></tr>
+                    ) : null}
+                    {leads.map((lead) => (
+                      <tr key={lead.id}>
+                        <td>{lead.full_name || "-"}</td>
+                        <td>{lead.phone || "-"}</td>
+                        <td>{lead.email || "-"}</td>
+                        <td>{lead.preferred_service || "-"}</td>
+                        <td>{lead.preferred_date || "-"}</td>
+                        <td style={{ maxWidth: 220, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{lead.notes || "-"}</td>
+                        <td><span className={`status-pill ${lead.status === "confirmed" ? "booked" : "pending"}`}>{lead.status || "new"}</span></td>
+                        <td>
+                          <button
+                            className="card-action"
+                            disabled={lead.status === "confirmed"}
+                            onClick={() => void updateLeadStatus(lead.id, "confirmed")}
+                          >
+                            Confirm
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : null}
 
